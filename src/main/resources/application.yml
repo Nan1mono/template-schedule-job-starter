@@ -1,0 +1,39 @@
+spring:
+  # Quartz定时任务配置
+  quartz:
+    # 定时器名称
+    scheduler-name: quartzScheduler
+    # job存储类型，只是jdbc和memory
+    job-store-type: jdbc
+    # 是否自动启动
+    auto-startup: true
+    # 延迟启动
+    startup-delay: 0s
+    # 应用结束时等待定时任务指定结束并关闭
+    wait-for-jobs-to-complete-on-shutdown: true
+    # 是否覆盖现有的job任务
+    overwrite-existing-jobs: true
+    jdbc:
+      # 是否初始化jdbc job-store表(第一次启动时请设置为always，之后改为never)
+      initialize-schema: never
+    properties:
+      org:
+        quartz:
+          jobStore:
+            class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            # 表前缀
+            tablePrefix: QRTZ_
+            # 是否开启集群
+            isClustered: true
+            # 数据源别名（自定义）
+            dataSource: quartz
+            # 分布式节点有效性检查时间间隔（毫秒）
+            clusterCheckinInterval: 10000
+            useProperties: false
+          # 线程池配置
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 10
+            threadPriority: 5
+            threadsInheritContextClassLoaderOfInitializingThread: true
