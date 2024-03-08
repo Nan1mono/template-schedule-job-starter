@@ -12,15 +12,15 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class ScheduleTemplateService {
+public class ScheduleActionTemplate {
 
     private final ScheduleJobRepository scheduleJobRepository;
 
     private final Scheduler scheduler;
 
     @Autowired
-    public ScheduleTemplateService(ScheduleJobRepository scheduleJobRepository,
-                                   Scheduler scheduler) {
+    public ScheduleActionTemplate(ScheduleJobRepository scheduleJobRepository,
+                                  Scheduler scheduler) {
         this.scheduleJobRepository = scheduleJobRepository;
         this.scheduler = scheduler;
     }
@@ -28,6 +28,7 @@ public class ScheduleTemplateService {
     private static final String MSG_1 = "Schedule job id:{} not exist, Please create schedule job";
     private static final String MSG_2 = "Schedule job class:{},function:{} not exist, Please create schedule job";
     private static final String MSG_3 = "Schedule job class:{},function:{} [{}] success";
+    private static final String MSG_4 = "Schedule job id:{},class:{},function:{} {}";
 
     /**
      * 添加定时任务
@@ -36,9 +37,10 @@ public class ScheduleTemplateService {
      * @param functionName  函数名称
      * @param cron          cron表达式字符串
      * @param isConcurrency 是否并发 0否 1是
+     * @param status        状态
      * @return {@link ScheduleJob}
      */
-    public ScheduleJob add(String className, String functionName, String cron, int isConcurrency) {
+    public ScheduleJob add(String className, String functionName, String cron, int status, int isConcurrency) {
         // 判断是否存在className和function的任务如果存在，则不允许添加
         ScheduleJob scheduleJob = scheduleJobRepository.findByClassNameAndFunctionNameAndIsDeleted(className, functionName, 0);
         if (scheduleJob != null) {
@@ -49,33 +51,69 @@ public class ScheduleTemplateService {
                 .setClassName(className)
                 .setFunctionName(functionName)
                 .setCron(cron)
-                .setIsConcurrency(isConcurrency);
+                .setIsConcurrency(isConcurrency)
+                .setStatus(status);
         scheduleJob = scheduleJobRepository.save(scheduleJob);
+        this.add(scheduleJob);
+        return scheduleJob;
+    }
+
+    private void add(ScheduleJob scheduleJob) {
         // 初始化定时任务JobData
-        JobDataMap jobDataMap = this.initJobData(className, functionName);
+        JobDataMap jobDataMap = this.initJobData(scheduleJob.getClassName(), scheduleJob.getFunctionName());
         JobBuilder jobBuilder;
-        // 确实是否支持并发
-        if (isConcurrency == 0) {
+        // 确认是否支持并发
+        if (scheduleJob.getIsConcurrency() == 0) {
             jobBuilder = JobBuilder.newJob(NoConcurrencyDynamicJob.class);
         } else {
             jobBuilder = JobBuilder.newJob(ConcurrencyDynamicJob.class);
         }
-        CronScheduleBuilder cronScheduleBuilder = this.cronBuild(cron);
+        CronScheduleBuilder cronScheduleBuilder = this.cronBuild(scheduleJob.getCron());
         JobDetail jobDetail = jobBuilder
                 .withIdentity(scheduleJob.getId().toString())
                 .usingJobData(jobDataMap)
                 .build();
-        CronTrigger cronTrigger = TriggerBuilder.newTrigger()
+        TriggerBuilder<CronTrigger> triggerBuilder = TriggerBuilder.newTrigger()
                 .withIdentity(scheduleJob.getId().toString())
-                // 立即执行
-                .startNow()
-                .withSchedule(cronScheduleBuilder)
-                .build();
+                .withSchedule(cronScheduleBuilder);
+        if (scheduleJob.getStatus() == 1) {
+            triggerBuilder.startNow();
+        }
+        CronTrigger cronTrigger = triggerBuilder.build();
         try {
             // 添加定时任务
             scheduler.scheduleJob(jobDetail, cronTrigger);
         } catch (SchedulerException e) {
             throw new ScheduleJobException("schedule add failed");
+        }
+    }
+
+    /**
+     * 更新定时任务数据
+     *
+     * @param id            编号
+     * @param className     类名
+     * @param functionName  函数名称
+     * @param cron          cron表达式
+     * @param isConcurrency 是否支持并发 1是 0否
+     * @return {@link ScheduleJob}
+     */
+    public ScheduleJob update(Long id, String className, String functionName, String cron, int isConcurrency) {
+        // 更新前判断指定的定时任务是否存在
+        ScheduleJob scheduleJob = scheduleJobRepository.findById(id).orElse(null);
+        if (scheduleJob == null) {
+            log.info(MSG_4, id, className, functionName, "not exist");
+        } else {
+            scheduleJob.setClassName(className);
+            scheduleJob.setFunctionName(functionName);
+            scheduleJob.setCron(cron);
+            scheduleJob.setIsConcurrency(isConcurrency);
+            // 先删除原来的定时任务
+            this.delete(id);
+            // 新增定时任务
+            this.add(scheduleJob);
+            // 更新数据库
+            scheduleJobRepository.save(scheduleJob);
         }
         return scheduleJob;
     }
