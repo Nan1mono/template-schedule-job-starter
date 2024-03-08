@@ -58,7 +58,7 @@ public class DruidConnectionProvider implements ConnectionProvider {
         }
 
         if (this.maxConnections < 0) {
-            throw new SQLException("DBPool maxConnectins could not be created: Max connections must be greater than zero!");
+            throw new SQLException("DBPool maxConnections could not be created: Max connections must be greater than zero!");
         }
 
         datasource = new DruidDataSource();

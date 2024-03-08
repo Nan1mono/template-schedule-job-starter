@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @Entity(name = "sys_schedule_job")
@@ -35,17 +33,5 @@ public class ScheduleJob {
 
     @Column(name = "is_deleted")
     private Integer isDeleted;
-
-    @Column(name = "create_by")
-    private String createBy;
-
-    @Column(name = "update_by")
-    private String updateBy;
-
-    @Column(name = "create_on")
-    private LocalDateTime createOn;
-
-    @Column(name = "update_on")
-    private LocalDateTime updateOn;
 
 }

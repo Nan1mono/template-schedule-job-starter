@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface ScheduleJobRepository extends JpaRepository<ScheduleJob, Long> {
     List<ScheduleJob> findByStatusAndIsDeleted(Integer status, Integer isDeleted);
+
+    ScheduleJob findByClassNameAndFunctionNameAndIsDeleted(String className, String functionName, Integer isDeleted);
 }
