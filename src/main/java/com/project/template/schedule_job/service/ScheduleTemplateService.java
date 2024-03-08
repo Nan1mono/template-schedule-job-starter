@@ -27,6 +27,7 @@ public class ScheduleTemplateService {
 
     private static final String MSG_1 = "Schedule job id:{} not exist, Please create schedule job";
     private static final String MSG_2 = "Schedule job class:{},function:{} not exist, Please create schedule job";
+    private static final String MSG_3 = "Schedule job class:{},function:{} [{}] success";
 
     /**
      * 添加定时任务
@@ -128,6 +129,7 @@ public class ScheduleTemplateService {
         // 确保任务成功停止之后更新数据库
         scheduleJob.setStatus(0);
         scheduleJobRepository.save(scheduleJob);
+        log.info(MSG_3, scheduleJob.getClassName(), scheduleJob.getFunctionName(), "pause");
         return true;
     }
 
@@ -177,6 +179,7 @@ public class ScheduleTemplateService {
         }
         scheduleJob.setIsDeleted(1);
         scheduleJobRepository.save(scheduleJob);
+        log.info(MSG_3, scheduleJob.getClassName(), scheduleJob.getFunctionName(), "delete");
         return true;
     }
 
@@ -229,6 +232,7 @@ public class ScheduleTemplateService {
         }
         scheduleJob.setStatus(1);
         scheduleJobRepository.save(scheduleJob);
+        log.info(MSG_3, scheduleJob.getClassName(), scheduleJob.getFunctionName(), "resume");
         return true;
     }
 
