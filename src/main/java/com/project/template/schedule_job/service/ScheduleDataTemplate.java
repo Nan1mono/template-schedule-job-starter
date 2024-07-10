@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ScheduleDataTemplate {
@@ -34,8 +35,8 @@ public class ScheduleDataTemplate {
         return scheduleJobRepository.findByClassNameContainingAndFunctionNameContainingAndIsConcurrencyAndStatusAndIsDeleted(
                 condition.getClassName(),
                 condition.getFunctionName(),
-                condition.getIsConcurrency(),
-                condition.getStatus(), 1, pageRequest);
+                condition.getIsConcurrency() == null ? 0 : condition.getIsConcurrency(),
+                condition.getStatus() == null ? 1 : condition.getStatus(), 1, pageRequest);
     }
 
     public ScheduleJob find(Long id) {
